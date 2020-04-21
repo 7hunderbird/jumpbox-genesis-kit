@@ -4,12 +4,14 @@ meta:
     azs: [z1]
 
 params:
-  hostname: (( concat params.env "-jumpbox" ))
+  hostname: (( concat genesis.env "-jumpbox" ))
   banner: ~
   hosts: []
   env_vars: {}
   bashrc: ~
   users: (( param "Set up some users to log into this jumpbox" ))
+  ca_validity_period: 1y
+  cert_validity_period: 180d
 
 update:
   canaries: 1
@@ -29,18 +31,20 @@ instance_groups:
       - name: (( grab params.jumpbox_network || "jumpbox"))
         static_ips: (( static_ips 0 ))
     jobs:
-      - { release: jumpbox, name: jumpbox         }
+      - name: jumpbox
+        release: jumpbox
+        properties:
+          jumpbox:
+            hostname: (( grab params.hostname ))
+            users: (( grab params.users ))
+            env:
+              TMPDIR: /var/vcap/data/root_tmp
+              .: (( inject params.env_vars ))
+
       - { release: jumpbox, name: inventory       }
       - { release: toolbelt, name: toolbelt       }
       - { release: toolbelt, name: toolbelt-quick }
 
-properties:
-  jumpbox:
-    hostname: (( grab params.hostname ))
-    users: (( grab params.users ))
-    env:
-      TMPDIR: /var/vcap/data/root_tmp
-      .: (( inject params.env_vars ))
 
 stemcells:
   - alias: default
@@ -49,11 +53,10 @@ stemcells:
 
 releases:
 - name:    jumpbox
-  version: 4.6.4
-  url:     (( concat "https://github.com/cloudfoundry-community/jumpbox-boshrelease/releases/download/v" releases.jumpbox.version "/jumpbox-" releases.jumpbox.version ".tgz" ))
-  sha1:    fd68368cc8237fb62edfb6649663bdc334318dfc
-
+  version: 4.7.3
+  url:     https://github.com/cloudfoundry-community/jumpbox-boshrelease/releases/download/v4.7.3/jumpbox-4.7.3.tgz
+  sha1:    a5718c380d14ae9e7b16d8179bb4b8efab59fba8
 - name:    toolbelt
-  version: 3.4.5
-  url:     (( concat "https://github.com/cloudfoundry-community/toolbelt-boshrelease/releases/download/v" releases.toolbelt.version "/toolbelt-" releases.toolbelt.version ".tgz" ))
-  sha1:    63dbf471ae35d4bf1b2fc3bdaf3cd49a30bf39f6
+  version: 3.5.0
+  url:     https://github.com/cloudfoundry-community/toolbelt-boshrelease/releases/download/v3.5.0/toolbelt-3.5.0.tgz
+  sha1:    08b493f205680323a005ab202e0add186137cec6
